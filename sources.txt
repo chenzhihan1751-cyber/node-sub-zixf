@@ -1,0 +1,13 @@
+# 上游订阅源，一行一个；# 开头是注释。
+# 这些都是「仓库里定时自动更新」的公开订阅，本脚本会把它们合并、去重、清洗。
+# 想增删源，直接改这个文件后 commit 即可（会触发一次抓取）。
+
+https://raw.githubusercontent.com/free-nodes/v2rayfree/main/sub
+https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt
+https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt
+https://raw.githubusercontent.com/mfuu/FreeProxies/main/sub
+https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/super-sub.txt
+https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt
+https://raw.githubusercontent.com/ripaojiedian/freenode/main/sub
+https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt
+https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt
