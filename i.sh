@@ -1,31 +1,60 @@
 #!/usr/bin/env bash
-# 缇庡浗鑺傜偣涓€閿锛歑ray VLESS+XTLS-Vision+REALITY锛堟棤闇€鍩熷悕/璇佷功锛? BBR + 闃茬伀澧欐斁琛?# 鐢ㄦ硶锛歴sh root@<IP> 'bash -s' < install-us-node.sh
-set -e
-export DEBIAN_FRONTEND=noninteractive
+# Xray VLESS+XTLS-Vision+REALITY installer, robust + verbose version.
+# Usage (on the VPS):  bash i.sh
+# Result: prints the vless:// link and also writes /root/result.txt
+set -uo pipefail
+
+LOG=/root/install.log
+: > "$LOG"
+exec > >(tee -a "$LOG") 2>&1
+
 PORT="${PORT:-$((20000 + RANDOM % 20000))}"
 SNI="${SNI:-www.microsoft.com}"
 
-echo "== 1/6 鍩虹鍖?
-apt-get update -qq
-apt-get install -y -qq curl unzip ca-certificates ufw >/dev/null 2>&1 || true
+echo "== 0. env: $(date -Is) kernel=$(uname -r) uid=$(id -u)"
 
-echo "== 2/6 BBR"
-if ! grep -q 'tcp_congestion_control=bbr' /etc/sysctl.conf 2>/dev/null; then
+echo "== 1. deps"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq || echo "WARN apt update failed"
+apt-get install -y -qq curl wget unzip ca-certificates jq >/dev/null || echo "WARN apt install failed"
+for b in curl wget; do command -v $b >/dev/null && echo "  have $b" || echo "  MISSING $b"; done
+
+echo "== 2. BBR"
+if ! grep -q 'tcp_congestion_control=bbr' /etc/sysctl.conf; then
   printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' >> /etc/sysctl.conf
   sysctl -p >/dev/null 2>&1 || true
 fi
+sysctl net.ipv4.tcp_congestion_control 2>/dev/null || true
 
-echo "== 3/6 瀹夎 Xray"
-bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install >/dev/null 2>&1 || \
-bash -c "$(curl -sL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+echo "== 3. install xray (official installer, output NOT hidden)"
+curl -sL -o /root/xray-install.sh https://github.com/XTLS/Xray-install/raw/main/install-release.sh
+ls -l /root/xray-install.sh
+bash /root/xray-install.sh install || echo "WARN xray installer returned $?"
+if [ -x /usr/local/bin/xray ]; then
+  echo "  xray path: /usr/local/bin/xray"
+  /usr/local/bin/xray version | head -2
+else
+  echo "  ERROR: /usr/local/bin/xray missing -> abort"
+  echo "RESULT=FAIL:no-xray" > /root/result.txt
+  exit 1
+fi
 
-echo "== 4/6 鐢熸垚瀵嗛挜涓?UUID"
+echo "== 4. keys"
+mkdir -p /usr/local/etc/xray
+KOUT=$(/usr/local/bin/xray x25519 2>&1)
+echo "$KOUT"
+PRIV=$(printf '%s\n' "$KOUT" | grep -iE 'private' | awk '{print $NF}' | tail -1)
+PUB=$(printf '%s\n' "$KOUT" | grep -iE 'public' | awk '{print $NF}' | tail -1)
+if [ -z "${PRIV:-}" ] || [ -z "${PUB:-}" ]; then
+  echo "  WARN parse failed, falling back to line order"
+  PRIV=$(printf '%s\n' "$KOUT" | sed -n '1p' | awk '{print $NF}')
+  PUB=$(printf '%s\n' "$KOUT" | sed -n '2p' | awk '{print $NF}')
+fi
 UUID=$(/usr/local/bin/xray uuid)
-KOUT=$(/usr/local/bin/xray x25519)
-PRIV=$(echo "$KOUT" | grep -iE 'private' | awk '{print $NF}')
-PUB=$(echo "$KOUT" | grep -iE 'public' | awk '{print $NF}')
+echo "  uuid=$UUID priv_len=${#PRIV} pub_len=${#PUB}"
+[ -n "$PRIV" ] && [ -n "$PUB" ] || { echo "  ERROR: keygen produced empty keys"; echo "RESULT=FAIL:keygen" > /root/result.txt; exit 1; }
 
-echo "== 5/6 鍐欓厤缃?
+echo "== 5. write config"
 cat > /usr/local/etc/xray/config.json <<JSON
 {
   "log": { "loglevel": "warning" },
@@ -56,23 +85,36 @@ cat > /usr/local/etc/xray/config.json <<JSON
   "outbounds": [ { "protocol": "freedom", "tag": "direct" }, { "protocol": "blackhole", "tag": "block" } ]
 }
 JSON
+/usr/local/bin/xray run -test -config /usr/local/etc/xray/config.json || echo "WARN config test failed"
+
+echo "== 6. service"
 systemctl enable xray >/dev/null 2>&1 || true
 systemctl restart xray
+sleep 2
+systemctl is-active xray
+systemctl is-enabled xray 2>/dev/null || true
 
-echo "== 6/6 鏀捐绔彛"
-ufw allow 22/tcp >/dev/null 2>&1 || true
-ufw allow ${PORT}/tcp >/dev/null 2>&1 || true
-ufw --force enable >/dev/null 2>&1 || true
+echo "== 7. firewall"
+if command -v ufw >/dev/null; then
+  ufw allow 22/tcp >/dev/null 2>&1 || true
+  ufw allow ${PORT}/tcp >/dev/null 2>&1 || true
+  echo "  ufw: 22 + ${PORT} allowed (not forcing enable)"
+else
+  echo "  no ufw"
+fi
 
-IP=$(curl -s4 ifconfig.me || curl -s4 ip.sb)
+IP=$(curl -s4 --max-time 10 ifconfig.me || curl -s4 --max-time 10 ip.sb || echo "UNKNOWN")
 LINK="vless://${UUID}@${IP}:${PORT}?encryption=none&security=reality&sni=${SNI}&fp=chrome&pbk=${PUB}&sid=&type=tcp&flow=xtls-rprx-vision#US-REALITY"
 
+{
+  echo "IP=${IP}"
+  echo "PORT=${PORT}"
+  echo "UUID=${UUID}"
+  echo "PUBLIC_KEY=${PUB}"
+  echo "LINK=${LINK}"
+} > /root/result.txt
+
 echo ""
-echo "================ 瀹屾垚 ================"
-echo "绔彛: ${PORT}"
-echo "鍒嗕韩閾炬帴锛堝鍏?Shadowrocket / v2rayN锛?"
-echo "${LINK}"
-echo "璁㈤槄锛坆ase64锛屽彲鑷鎵樼锛?"
-echo -n "${LINK}" | base64 -w0
-echo ""
-echo "======================================"
+echo "================ RESULT ================"
+cat /root/result.txt
+echo "========================================"
