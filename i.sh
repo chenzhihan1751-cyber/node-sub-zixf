@@ -1,31 +1,54 @@
 #!/usr/bin/env bash
-# 缁欏凡鏈?REALITY 閰嶇疆"鍔犱竴鏉?VLESS-WS 鍏ョ珯"锛堢粰 Cloudflare 鍓嶇疆鐢級銆?# 淇濈暀鍘?REALITY 鍏ョ珯涓庣閽ワ紝鍙拷鍔?WS 鍏ョ珯锛岀劧鍚庨噸鍚?xray銆?# 鐢ㄦ硶锛堟湇鍔″櫒涓婏級锛歜ash i.sh     缁撴灉锛?root/result.txt锛堝惈 ws 璺緞涓?uuid锛?set -uo pipefail
+# 涓€閿細鈶?淇琚悶鍧忕殑 sshd 閰嶇疆锛堟仮澶?22 绔彛锛?鈶?缁?xray 鍔犱竴鏉?VLESS-WS 鍏ョ珯锛圕loudflare 鍓嶇疆鐢級
+# 鐢ㄦ硶锛堟湇鍔″櫒涓婏級锛歜ash i.sh        缁撴灉锛?root/result.txt
+set -uo pipefail
 LOG=/root/install.log
 : > "$LOG"
 exec > >(tee -a "$LOG") 2>&1
 
+echo "########## PART 1: 淇?sshd ##########"
+echo "== 澶囦唤鍘熼厤缃?
+cp -f /etc/ssh/sshd_config /root/sshd_config.bak.$(date +%s) 2>/dev/null || true
+echo "== 鍘熼厤缃噷鐨?Port / 闈炴敞閲婅鏁?
+grep -n '^Port' /etc/ssh/sshd_config || echo "  (娌℃湁 Port 琛?"
+echo "== 璇硶妫€鏌ワ紙鍘熼厤缃級"
+sshd -t || echo "  鍘熼厤缃娉曢敊璇?^^^"
+
+echo "== 鍐欏叆骞插噣鐨勬渶灏忛厤缃?
+cat > /etc/ssh/sshd_config <<'EOF'
+Port 22
+PermitRootLogin yes
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+AuthorizedKeysFile .ssh/authorized_keys
+Subsystem sftp /usr/lib/openssh/sftp-server
+EOF
+sshd -t && echo "  鏂伴厤缃娉?OK"
+echo "== 閲嶅惎 ssh"
+systemctl enable ssh >/dev/null 2>&1 || true
+systemctl restart ssh || true
+sleep 2
+echo -n "  ssh 鏈嶅姟鐘舵€? "; systemctl is-active ssh || true
+ss -ltn 2>/dev/null | grep -qE ':22\b' && echo "  22 绔彛鍦ㄧ洃鍚?OK" || echo "  22 绔彛鏈洃鍚?!!"
+
+echo ""
+echo "########## PART 2: 鍔?VLESS-WS 鍏ョ珯 ##########"
 CFG=/usr/local/etc/xray/config.json
 WS_PORT="${WS_PORT:-8080}"
 WS_PATH="${WS_PATH:-/ws}"
-BAK=/root/config.json.bak.$(date +%s)
-
-echo "== 0. $(date -Is)"
-[ -f "$CFG" ] || { echo "ERROR: 娌℃湁 $CFG"; echo "RESULT=FAIL:no-config" > /root/result.txt; exit 1; }
-
-echo "== 1. 澶囦唤鍘熼厤缃?-> $BAK"
-cp -f "$CFG" "$BAK"
-
-echo "== 2. 浠庡師閰嶇疆閲屾彁鍙栧弬鏁?
-PRIV=$(grep -oP '"privateKey"\s*:\s*"\K[^"]+' "$CFG" | head -1)
-UUID=$(grep -oP '"id"\s*:\s*"\K[^"]+' "$CFG" | head -1)
-SNI=$(grep -oP '"dest"\s*:\s*"\K[^":]+' "$CFG" | head -1)
-PORT=$(grep -oP '"port"\s*:\s*\K[0-9]+' "$CFG" | head -1)
-echo "  reality_port=$PORT uuid=$UUID sni=$SNI priv_len=${#PRIV}"
-[ -n "$PRIV" ] && [ -n "$UUID" ] || { echo "ERROR: 鎻愬彇澶辫触"; echo "RESULT=FAIL:parse" > /root/result.txt; exit 1; }
-[ -n "$SNI" ] || SNI=www.microsoft.com
-
-echo "== 3. 鍐欐柊閰嶇疆锛圧EALITY + WS 涓ゆ潯鍏ョ珯锛?
-cat > "$CFG" <<JSON
+if [ ! -f "$CFG" ]; then
+  echo "ERROR: 娌℃湁 $CFG锛岃烦杩?
+else
+  cp -f "$CFG" /root/config.json.bak.$(date +%s)
+  PRIV=$(grep -oP '"privateKey"\s*:\s*"\K[^"]+' "$CFG" | head -1)
+  UUID=$(grep -oP '"id"\s*:\s*"\K[^"]+' "$CFG" | head -1)
+  SNI=$(grep -oP '"dest"\s*:\s*"\K[^":]+' "$CFG" | head -1)
+  PORT=$(grep -oP '"port"\s*:\s*\K[0-9]+' "$CFG" | head -1)
+  echo "  鎻愬彇: reality_port=$PORT uuid=$UUID sni=$SNI privlen=${#PRIV}"
+  [ -n "${SNI:-}" ] || SNI=www.microsoft.com
+  if [ -n "${PRIV:-}" ] && [ -n "${UUID:-}" ]; then
+    cat > "$CFG" <<JSON
 {
   "log": { "loglevel": "warning" },
   "inbounds": [
@@ -50,25 +73,18 @@ cat > "$CFG" <<JSON
   "outbounds": [ { "protocol": "freedom", "tag": "direct" }, { "protocol": "blackhole", "tag": "block" } ]
 }
 JSON
-
-echo "== 4. 閰嶇疆鏍￠獙"
-/usr/local/bin/xray run -test -config "$CFG" || { echo "ERROR: 鏍￠獙澶辫触锛屽洖婊?; cp -f "$BAK" "$CFG"; systemctl restart xray; echo "RESULT=FAIL:config-test" > /root/result.txt; exit 1; }
-
-echo "== 5. 閲嶅惎鏈嶅姟"
-systemctl restart xray
-sleep 2
-systemctl is-active xray
-ss -ltn 2>/dev/null | grep -E ":(${PORT}|${WS_PORT})\b" || true
-
-echo "== 6. 鏀捐 WS 绔彛"
-command -v ufw >/dev/null && { ufw allow ${WS_PORT}/tcp >/dev/null 2>&1 || true; }
-
-IP=$(curl -s4 --max-time 10 ifconfig.me || echo UNKNOWN)
-{
-  echo "IP=${IP}"
-  echo "REALITY_PORT=${PORT}"
-  echo "WS_PORT=${WS_PORT}"
-  echo "WS_PATH=${WS_PATH}"
-  echo "UUID=${UUID}"
-} > /root/result.txt
-echo ""; echo "================ RESULT ================"; cat /root/result.txt; echo "========================================"
+    /usr/local/bin/xray run -test -config "$CFG" && echo "  xray 閰嶇疆鏍￠獙 OK" || echo "  xray 閰嶇疆鏍￠獙澶辫触 !!"
+    systemctl restart xray
+    sleep 2
+    echo -n "  xray 鐘舵€? "; systemctl is-active xray || true
+    ss -ltn 2>/dev/null | grep -E ":(${PORT}|${WS_PORT})\b" || true
+    command -v ufw >/dev/null && { ufw allow ${WS_PORT}/tcp >/dev/null 2>&1 || true; }
+    IP=$(curl -s4 --max-time 8 ifconfig.me || echo UNKNOWN)
+    { echo "IP=${IP}"; echo "REALITY_PORT=${PORT}"; echo "WS_PORT=${WS_PORT}"; echo "WS_PATH=${WS_PATH}"; echo "UUID=${UUID}"; } > /root/result.txt
+    echo ""; echo "================ RESULT ================"; cat /root/result.txt; echo "========================================"
+  else
+    echo "ERROR: 鏃犳硶浠庡師閰嶇疆鎻愬彇 privateKey/UUID"
+    echo "RESULT=FAIL:parse" > /root/result.txt
+  fi
+fi
+echo "ALL DONE"
