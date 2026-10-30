@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-30T06:01:08.728Z",
+  "updated": "2026-10-30T13:11:09.799Z",
   "sources": [
     {
       "url": "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/sub",
@@ -12,41 +12,41 @@
     {
       "url": "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt",
       "ok": true,
-      "bytes": 117284,
-      "lines": 436,
+      "bytes": 115076,
+      "lines": 438,
       "kept": 391,
       "via": "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt",
       "ok": true,
-      "bytes": 99303,
-      "lines": 492,
-      "kept": 86,
+      "bytes": 104626,
+      "lines": 519,
+      "kept": 72,
       "via": "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/mfuu/FreeProxies/main/sub",
       "ok": true,
-      "bytes": 31004,
-      "lines": 112,
-      "kept": 77,
+      "bytes": 30784,
+      "lines": 111,
+      "kept": 76,
       "via": "https://raw.githubusercontent.com/mfuu/FreeProxies/main/sub"
     },
     {
       "url": "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/super-sub.txt",
       "ok": true,
-      "bytes": 80180,
+      "bytes": 77228,
       "lines": 200,
-      "kept": 194,
+      "kept": 195,
       "via": "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/super-sub.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt",
       "ok": true,
-      "bytes": 50744,
+      "bytes": 45113,
       "lines": 200,
-      "kept": 156,
+      "kept": 153,
       "via": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt"
     },
     {
@@ -60,9 +60,9 @@
     {
       "url": "https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt",
       "ok": true,
-      "bytes": 442696,
-      "lines": 1735,
-      "kept": 416,
+      "bytes": 451312,
+      "lines": 1751,
+      "kept": 427,
       "via": "https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt"
     },
     {
@@ -71,20 +71,20 @@
       "error": "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt → HTTP 404 ; [镜像] https://raw.gitmirror.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt → ENOTFOUND ; [镜像] https://ghproxy.net/https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt → HTTP 404 ; [镜像] https://gh-proxy.com/https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt → HTTP 404"
     }
   ],
-  "raw": 3273,
-  "junk": 33,
+  "raw": 3317,
+  "junk": 37,
   "badHost": 20,
-  "duplicate": 1828,
-  "hostCap": 7,
-  "dead": 491,
-  "total": 894,
+  "duplicate": 1879,
+  "hostCap": 2,
+  "dead": 510,
+  "total": 869,
   "byProtocol": {
-    "vless": 398,
-    "hysteria2": 3,
-    "ss": 243,
-    "trojan": 154,
+    "vless": 379,
+    "hysteria2": 2,
+    "ss": 240,
+    "trojan": 164,
+    "vmess": 79,
     "ssr": 1,
-    "vmess": 89,
-    "hy2": 6
+    "hy2": 4
   }
 }
