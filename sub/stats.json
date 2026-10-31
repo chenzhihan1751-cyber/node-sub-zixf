@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-30T22:28:57.874Z",
+  "updated": "2026-10-31T05:56:21.615Z",
   "sources": [
     {
       "url": "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/sub",
@@ -9,41 +9,41 @@
     {
       "url": "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt",
       "ok": true,
-      "bytes": 120828,
-      "lines": 439,
-      "kept": 388,
+      "bytes": 119152,
+      "lines": 440,
+      "kept": 401,
       "via": "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt",
       "ok": true,
-      "bytes": 104626,
+      "bytes": 109489,
       "lines": 519,
-      "kept": 176,
+      "kept": 120,
       "via": "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/mfuu/FreeProxies/main/sub",
       "ok": true,
-      "bytes": 33164,
-      "lines": 120,
-      "kept": 78,
+      "bytes": 32924,
+      "lines": 119,
+      "kept": 75,
       "via": "https://raw.githubusercontent.com/mfuu/FreeProxies/main/sub"
     },
     {
       "url": "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/super-sub.txt",
       "ok": true,
-      "bytes": 84176,
+      "bytes": 83548,
       "lines": 200,
-      "kept": 191,
+      "kept": 189,
       "via": "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/super-sub.txt"
     },
     {
       "url": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt",
       "ok": true,
-      "bytes": 44302,
+      "bytes": 40333,
       "lines": 200,
-      "kept": 156,
+      "kept": 139,
       "via": "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity.txt"
     },
     {
@@ -69,19 +69,19 @@
     }
   ],
   "raw": 3242,
-  "junk": 34,
+  "junk": 31,
   "badHost": 20,
-  "duplicate": 1787,
-  "hostCap": 6,
-  "dead": 501,
-  "total": 894,
+  "duplicate": 1854,
+  "hostCap": 7,
+  "dead": 413,
+  "total": 917,
   "byProtocol": {
-    "vless": 394,
-    "ss": 241,
+    "vless": 414,
     "hysteria2": 1,
-    "trojan": 167,
+    "trojan": 162,
+    "ss": 247,
     "ssr": 2,
-    "vmess": 85,
+    "vmess": 87,
     "hy2": 4
   }
 }
